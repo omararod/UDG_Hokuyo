@@ -1,0 +1,271 @@
+\documentclass{book}
+
+\title{UDG\_Hokuyo User guide}
+\author{Omar Alejandro Rodr\'{i}guez Rosas}
+
+\usepackage{listings}
+\lstset{language=c++,
+		showstringspaces=false,
+		 breaklines=true}
+
+\begin{document}
+\tableofcontents
+\chapter{Introduction}
+This is a c++ implementation of the SCIP 2.0 protocol for Hokuyo products. The current version implements only those commands supported by the UTM-30LX model.\\
+\chapter{Setup}
+1. Make sure the driver is installed.\\
+2. Connect the laser to a 12v DC power source. Typical current consumption goes from 0.8A to 1A. \textbf{WARNING: }Inverting the polarity might cause severe damage to the device, consult the user guide before powering the laser.\\
+3. Connect the laser's USB cable to your computer. The device will report itself as a virtual serial port (COMx in Windows, /dev/ttyACMx in linux).\\
+\section{Building with UDG\_Hokuyo}
+This guide uses Microsoft Visual Studio Express for Desktop 2012 and Windows 8.1 or g++ 4.7 and Ubuntu 13.10. Other compiler/OS/Distribution combnations might work as well but haven't been tested.\\
+\subsection{Windows}
+1. Copy the UDG\_Hokuyo release folder to a suitable location.\\
+2. Open your Visual Studio solution.\\
+3. As an optional step, you might want to add UDG\_Hokuyo include (\textless{}Release\_Folder \textgreater\textbackslash{include}) and library (\textless{}Release\_Folder\textgreater\textbackslash{include}\textbackslash{bin}\textbackslash{\textless{}Architecture\textgreater}) directories to your default search folders. To do so, for the include folder go to Project\textbackslash{\textless{}Name\textgreater Properties}\textbackslash{Configuration Properties}\textbackslash{C/C++}\textbackslash{General} and enter the appropriate path in Additional Include Directories. Similarly, for the binary folder edit the Additional library directories property in  Project\textbackslash{\textless{}Name\textgreater{}Properties}\textbackslash{Configuration Properties}\textbackslash{Linker}\textbackslash{General}.\\
+4. Your source files should use \#include \textless UDG\_Hokuyo.h\textgreater or \#include ``UDG\_Hokuyo.h''\footnote{Remember that, when using quotes, If the header file is not on your current directory the full path should be included i.e. \#include ``c:\textbackslash{}foo\textbackslash{}bar\textbackslash{}UDG\_Hokuyo.h''.}\\
+5. Make sure you're linking with UDG\_Hokuyo.lib. To do so add UDG\_Hokuyo.lib to Additional Dependencies in Project\textbackslash{\textless{}Name\textgreater{}Properties}\textbackslash{Configuration Properties}\textbackslash{Linker}\textbackslash{Input} or add \#pragma comment(lib,``UDG\_Hokuyo.lib'') to your code. \footnote{Use the whole path if you skipped step 3.}\\
+ 
+\subsection{Linux (Ubuntu)}
+1. Copy the UDG\_Hokuyo release folder to a suitable location.\\
+2. As an optional step you might want to place the header and library files into your default search directories. Typically you'll need to copy \textless{}Release\_Folder\textgreater{}/include/UDG\_Hokuyo.h to /usr/include/ and \textless{}Release\_Folder\textgreater{}/bin/\textless{}Architecture\textgreater{}/libUDG\_Hokuyo.a to /usr/lib.\footnote{These default libraries might vary depending on your compiler settings.}\\
+3. Your source files should use \#include \textless UDG\_Hokuyo.h\textgreater or \#include ``UDG\_Hokuyo.h''\footnote{Remember that, when using quotes, If the header file is not on your current directory the full path should be included or you can also use the -I option (see g++ help).}\\
+4. To build your application use -std=c++11 \footnote{ -std=c++0x might work as well if you're using an older g++ version} and link with -lUDG\_Hokuyo.a \footnote{Or simply UDG\_Hokuyo.a if you skipped step 2. If the file is not on your current folder you can use its whole path or the -L option (see g++ help).}
+
+\chapter{The UDG\_Hokuyo API}
+\section{LaserData class}
+\subsection*{Public members}
+
+\subsubsection{int firstStep}
+The first of the 1080 steps of the motor containing laser data. This is also the first position of the buffer (\textit{int data[]} that contains useful data. To obtain the actual angle, multiply be 0.25.\\
+
+\subsubsection{int lastStep}
+The last of the 1080 steps of the motor containing laser data. This is also the last position of the buffer (\textit{int data[]} that contains useful data. To obtain the actual angle, multiply be 0.25.\\
+
+\subsubsection{HokuyoEncoding encoding}
+\label{sec:encoding}
+Defines the type of encoding to be used for measurements. Posible values are:\\
+
+\textbf{HokuyoEncoding.TWO\_CHARACTER: } Uses 12 bits to represent measurements, that is, from 0 to 4095mm. Further distances are capped to the max value.\\
+
+\textbf{HokuyoEncoding.THREE\_CHARACTER: } Uses 18 bits to represent measurements, that is, from 0 to 262143mm (although 30000 is the max range for the Hokuyo UTM-30LX).\\
+
+\subsubsection{LaserData()}
+Default constructor for the class.
+\subsubsection{	bool SetData(unsigned char* buffer)}
+Decodes the raw information from a laser reading contained in \textit{buffer} and stores it in \textit{LaserData::data}.\\
+\textbf{unsigned char* buffer: }A byte buffer containing the raw data from a laser reading.\\\\
+\textbf{Return value:} true if the operation succeeds, false if it doesn't.\\
+
+\subsubsection{int GetReadingsCount()}
+Gets the number of steps that where actually read in the last update.\\\\
+\textbf{Return value:} returns \textit{LaserData::lastStep - LaseData::firstStep +1}
+
+\subsection{Private members}
+\subsubsection{bool CharToNumber(unsigned char* string,int nDigits,int* result)}
+Converts an ascii string representing a decimal number stored at \textit{string} with \textit{nDigits} digits and stores it in \textit{result}.
+
+
+\section{The Hokuyo class}
+
+\subsection{Public members}
+\subsubsection{HANDLE serialPortDescriptor}
+The device descriptor associated to the device,that is, a COM port in Windows or /dev/ttyACMx in Linux.\\
+
+\subsubsection{Hokuyo()}
+The default constructor for the class, initializes \textit{Hokuyo::serialPortDescriptor} to NULL.\\
+\subsubsection{Hokuyo(HANDLE portDescriptor)}
+Constructor for the class, initializes \textit{Hokuyo::serialPortDescriptor} \textit{portDescriptor}.\\
+\subsubsection{	~Hokuyo()}
+Destructor method for the class.\\
+\subsubsection{bool GetData(HokuyoEncoding encoding, unsigned short startingStep,
+		unsigned short endStep, unsigned short clusterCount,unsigned short scanInterval, 
+		unsigned short nScans, unsigned char* response)}
+This operation is described as "MDMS-Command" in the documentation for the SCIP 2.0. protocol. Gets distance measurements in the selected range.\\
+\textbf{HokuyoEncoding encoding: }Indicates the encoding format of the data and thus, its max range (see \ref{sec:encoding}).\\
+\textbf{unsigned short startingStep: }The first measurement step to read with th laser (between 0 and 1080 for the UTM-30LX model).\\
+\textbf{unsigned short endStep: }The last measurement step to read with th laser (between 0 and 1080 for the UTM-30LX model).\\	
+\textbf{unsigned short clusterCount: } The Hokuyo allows the user to use clustering, that is, a group of 0 to 99 measurement steps that are interpreted as one. The minor distance amongst them is the one returned. For more info, check the SCIP 2.0 protocol documentation.\\
+\textbf{unsigned short scanInterval: } The number of scans to be skipped. See the SCIP 2.0 documentation for more info.\\
+\textbf{unsigned short nScans: }The number of scans to perform.
+\textbf{ unsigned char* response: } A byte buffer to store the response.\\\\
+
+\textbf{Return Value: }true if it succeeds, false if it doesn't.\\
+
+\subsubsection{bool SwitchLaserOn(unsigned char* response)}
+This section is referred to as 'BM-Command' in the SCIP 2.0 documentation. Turns the laser on.\\
+\textbf{unsigned char* buffer : } a byte buffer containng the raw response from the instruction. this is useful to diagnose and correct errors.\\\\
+\textbf{Return Value: }true if it succeeds, false if it doesn't.\\
+
+\subsubsection{bool SwitchLaserOff(unsigned char* response)}
+This section is referred to as 'QT-Command' in the SCIP 2.0 documentation. Turns the laser off.\\
+\textbf{unsigned char* buffer : } a byte buffer containng the raw response from the instruction. this is useful to diagnose and correct errors.\\\\
+\textbf{Return Value: }true if it succeeds, false if it doesn't.\\
+
+\subsubsection{bool Reset(unsigned char* response); }
+This command, also known as 'RS-Command' will reset all the settings that were changed after sensor was switched on. This turns Laser off,
+sets motor speed and bit rate back to default as well as reset sensor’s internal timer.\\
+\textbf{unsigned char* buffer : } a byte buffer containng the raw response from the instruction. this is useful to diagnose and correct errors.\\\\
+\textbf{Return Value: }true if it succeeds, false if it doesn't.\\
+
+\subsubsection{bool GetVersionDetails(unsigned char* response)}
+Refered to as 'VV-Command', Transmits version details such as, serial number, firmware version etc on receiving this command.\\
+\textbf{unsigned char* buffer : } a byte buffer containng the  response from the instruction as a null terminated string.\\\\
+
+\textbf{Return Value: }true if it succeeds, false if it doesn't.\\
+
+\subsubsection{bool GetSpecs(unsigned char* response} Refered to as 'PP-Command', makes the sensor transmit its specifications.\\
+\textbf{unsigned char* buffer : } a byte buffer containng the  response from the instruction as a null terminated string.\\\\
+
+\textbf{Return Value: }true if it succeeds, false if it doesn't.\\
+
+\subsubsection{bool GetRunningState(unsigned char* response)} Also known as 'II-Command' makes the laser transmit its running state.\\
+\textbf{unsigned char* buffer : } a byte buffer containng the  response from the instruction as a null terminated string.\\\\
+
+\textbf{Return Value: }true if it succeeds, false if it doesn't.\\
+	
+
+
+\subsection{Private members}
+\subsubsection{	int readDelayMs}
+The time in milisecons to wait after a read.\\
+\subsubsection{bool WriteToSerialPort(unsigned char* buffer, int bytesToWrite)} Generic write funtion associated with Hokuyo::serialPortDescriptor.\\
+\subsubsection{int ReadFromSerialPort(unsigned char* buffer)}
+ Generic read funtion associated with Hokuyo::serialPortDescriptor.\\
+ \subsubsection{	void NumberToChar(unsigned short number, int nCharacters,unsigned char string[])}
+ Converts an unsigned short into its ascii representation as a sring with \textit{nCharacters} characters.
+
+	
+
+
+	
+
+
+\chapter{Code Samples}
+The code samples work for the Microsoft c++ compiler (cl, using Visual Studio Express 2012 for desktop) and g++ 3.8. Other compilers might work as well but haven't been tested yet. Windows examples assume an unicode build. \\
+\section{Opening a serial port descriptor}
+For both Linux and Windows implementations, you need to provide a file descriptor associated with a serial port. The following samples demonstrate how to code a function to do so.\\
+textbf{NOTE: }The name of the serial port associated with your board varies from system to system. You'll notice that two virtual communication ports with contiguous numbering will register themselves when connecting the board. You need to use the one with the higher number. Typically this will be COMx for Windows and ttyACMx for linux.\\
+\subsection{Windows}
+\begin{lstlisting}
+
+HANDLE OpenSerialPort(LPWSTR name)
+{
+	HANDLE portDescriptor;
+	DCB deviceControlBlock;
+	portDescriptor = CreateFile(name,
+				GENERIC_READ|GENERIC_WRITE,
+				0,0,OPEN_EXISTING,0,0);
+	if(portDescriptor == INVALID_HANDLE_VALUE)
+	{
+		printf("Failed opening %ls\n", name);
+		return INVALID_HANDLE_VALUE;
+	}
+
+	FillMemory(&deviceControlBlock,sizeof(DCB),0);
+	deviceControlBlock.DCBlength = sizeof(DCB);
+	if(BuildCommDCB(L"57600,n,8,1",&deviceControlBlock))
+	{
+		printf("Successfully configured DCB!\n");
+		
+	}
+	else
+	{
+		printf("Something went wrong while building the DCB\n");
+		return INVALID_HANDLE_VALUE;
+	}
+
+	if (!SetCommState(portDescriptor,&deviceControlBlock))
+	{
+		printf("Error configuring port\n");
+		return INVALID_HANDLE_VALUE;
+	}
+	else
+	{
+		printf("Serial port ready\n");
+	}
+		
+	return portDescriptor;
+}
+
+\end{lstlisting}
+\subsection{Linux}
+\textbf{NOTE: }In the linux implementation, HANDLE is defined as int.\\
+\begin{lstlisting}
+int OpenSerialPort(const char* device)
+{
+	int fd = open(device, O_RDWR | O_NOCTTY);
+	struct termios options;
+  tcgetattr(fd, &options);
+  options.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+  options.c_oflag &= ~(ONLCR | OCRNL);
+  tcsetattr(fd, TCSANOW, &options);
+  return fd;
+}
+\end{lstlisting}
+\section{Typical applications}
+\subsection{Get device info}
+The SCIP 2.0 protocol provides some commands to get information about the laser such as range, firmware version, running state, serial number, etc. Those functions will return a null terminated char buffer that can be directly printed using operations as printf.\\
+\begin{lstlisting}
+#include <stdio.h>
+#include "UDG_Hokuyo.h"
+int main(int nargs, char* args[])
+{
+#ifdef __linux
+char* portName = "/dev/ttyACM0";
+#else
+	wchar_t *portName = L"COM7";
+#endif
+	HANDLE port = OpenSerialPort(portName);
+	
+	
+	Hokuyo laser(port);
+	unsigned char returnBuffer[HOKUYO_BUFFER_SIZE];
+
+	if(laser.GetRunningState(returnBuffer))
+		printf("%s\n",returnBuffer);
+	if(laser.GetSpecs(returnBuffer))
+		printf("%s\n",returnBuffer);
+	if(laser.GetVersionDetails(returnBuffer))
+		printf("%s\n",returnBuffer);
+	
+	
+}
+
+\end{lstlisting}
+
+\subsection{Reading laser data}
+A series of operations must be followed in order to read and use depth information from the laser. First you'll need to initialize a Hokuyo instance. You need to provide the Hokuyo::GetData() with information about the encoding (see \ref{sec:encoding}), start and ending steps for it to behave as expected. Once the depth data has been read, it'll be sotred as raw bytes in the buffer provided to Hokuyo::GetData(). To translate this raw depth information  yo can create a LaseData instance and call LaserData::GetData() with the raw buffer as an input parameter. If succesful, this function will intialize the LaserData instance to contain information about the start and end steps, number of measurements performed and an int array (LaserData::data) containing the actual measurements. Remember that each position of the array corresponds to a measurement step, so position 0 maps to step 0,position 1 to step 1 and so on. Each position outside your measurement range (that is, smaller than the start step or greater than the end step) will be set to 0.\\
+This example shows how to get some measurements and print them to screen.\\
+ \begin{lstlisting}
+ #include <stdio.h>
+ #include "UDG_Hokuyo.h"
+ int main(int nargs, char* args[])
+ {
+ #ifdef __linux
+ char* portName = "/dev/ttyACM0";
+ #else
+ 	wchar_t *portName = L"COM7";
+ #endif
+ 	HANDLE port = OpenSerialPort(portName);
+ 	
+ 	
+ 	Hokuyo laser(port);
+ 	unsigned char returnBuffer[HOKUYO_BUFFER_SIZE];
+ 	
+ 	laser.GetData(HokuyoEncoding::THREE_CHARACTER,
+ 	HOKUYO_FIRST_MEASUREMENT_POINT,
+ 	HOKUYO_LAST_MEASUREMENT_POINT-1,
+ 	0,0,1,returnBuffer);
+ 	LaserData data;
+ 	data.SetData(returnBuffer);
+ 	for(int i = data.firstStep; i <= data.lastStep;i++)
+ 		printf("%i ",data.data[i]);
+ 	
+ 	return 0;
+ }
+ 	
+ \end{lstlisting}
+
+
+
+\end{document}

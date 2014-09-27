@@ -1,0 +1,40 @@
+\contentsline {chapter}{\numberline {1}Introduction}{3}
+\contentsline {chapter}{\numberline {2}Setup}{5}
+\contentsline {section}{\numberline {2.1}Building with UDG\_Hokuyo}{5}
+\contentsline {subsection}{\numberline {2.1.1}Windows}{5}
+\contentsline {subsection}{\numberline {2.1.2}Linux (Ubuntu)}{6}
+\contentsline {chapter}{\numberline {3}The UDG\_Hokuyo API}{7}
+\contentsline {section}{\numberline {3.1}LaserData class}{7}
+\contentsline {subsubsection}{int firstStep}{7}
+\contentsline {subsubsection}{int lastStep}{7}
+\contentsline {subsubsection}{HokuyoEncoding encoding}{7}
+\contentsline {subsubsection}{LaserData()}{8}
+\contentsline {subsubsection}{ bool SetData(unsigned char* buffer)}{8}
+\contentsline {subsubsection}{int GetReadingsCount()}{8}
+\contentsline {subsection}{\numberline {3.1.1}Private members}{8}
+\contentsline {subsubsection}{bool CharToNumber(unsigned char* string,int nDigits,int* result)}{8}
+\contentsline {section}{\numberline {3.2}The Hokuyo class}{8}
+\contentsline {subsection}{\numberline {3.2.1}Public members}{8}
+\contentsline {subsubsection}{HANDLE serialPortDescriptor}{8}
+\contentsline {subsubsection}{Hokuyo()}{8}
+\contentsline {subsubsection}{Hokuyo(HANDLE portDescriptor)}{8}
+\contentsline {subsubsection}{ \nobreakspace {}Hokuyo()}{9}
+\contentsline {subsubsection}{bool GetData(HokuyoEncoding encoding, unsigned short startingStep, unsigned short endStep, unsigned short clusterCount,unsigned short scanInterval, unsigned short nScans, unsigned char* response)}{9}
+\contentsline {subsubsection}{bool SwitchLaserOn(unsigned char* response)}{9}
+\contentsline {subsubsection}{bool SwitchLaserOff(unsigned char* response)}{9}
+\contentsline {subsubsection}{bool Reset(unsigned char* response); }{10}
+\contentsline {subsubsection}{bool GetVersionDetails(unsigned char* response)}{10}
+\contentsline {subsubsection}{bool GetSpecs(unsigned char* response}{10}
+\contentsline {subsubsection}{bool GetRunningState(unsigned char* response)}{10}
+\contentsline {subsection}{\numberline {3.2.2}Private members}{11}
+\contentsline {subsubsection}{ int readDelayMs}{11}
+\contentsline {subsubsection}{bool WriteToSerialPort(unsigned char* buffer, int bytesToWrite)}{11}
+\contentsline {subsubsection}{int ReadFromSerialPort(unsigned char* buffer)}{11}
+\contentsline {subsubsection}{ void NumberToChar(unsigned short number, int nCharacters,unsigned char string[])}{11}
+\contentsline {chapter}{\numberline {4}Code Samples}{13}
+\contentsline {section}{\numberline {4.1}Opening a serial port descriptor}{13}
+\contentsline {subsection}{\numberline {4.1.1}Windows}{13}
+\contentsline {subsection}{\numberline {4.1.2}Linux}{14}
+\contentsline {section}{\numberline {4.2}Typical applications}{15}
+\contentsline {subsection}{\numberline {4.2.1}Get device info}{15}
+\contentsline {subsection}{\numberline {4.2.2}Reading laser data}{15}
